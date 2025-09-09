@@ -14,9 +14,7 @@ Pydantic Stack Core provides a simple foundation for building composable models 
 
 ## Installation
 
-```bash
-pip install pydantic-stack-core
-```
+[Installation instructions pending PyPI publication]
 
 ## Quick Start
 
