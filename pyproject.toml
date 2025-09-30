@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pydantic-stack-core"
-version = "0.1.1"
+version = "0.1.2"
 description = "Minimal library for stackable, renderable Pydantic models"
 authors = [{name = "HEAVEN Team"}]
 readme = "README.md"

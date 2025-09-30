@@ -1,27 +1,29 @@
 # Pydantic Stack Core
 
-Minimal library for creating stackable, renderable Pydantic models that compose into structured string outputs.
+Typed hierarchical composition for structured text generation through nested Pydantic models.
 
 ## Overview
 
-Pydantic Stack Core provides a simple foundation for building composable models that render to strings. Perfect for generating structured text, documentation, code, or any format where you need systematic composition.
+Pydantic Stack Core enables building complex documents through **nested, typed Pydantic models** that render to composite strings via **recursive composition**. The power isn't in simple string concatenation - it's in creating **typed document trees** where each node knows how to render itself and its children.
 
-## Key Concepts
+## The Core Pattern: Nested Typed Composition
 
-- **RenderablePiece**: Base class for any model that renders to string
-- **MetaStack**: Universal container for stacking RenderablePiece models  
-- **generate_output_from_metastack**: Function to render stacks to final output
+Unlike simple templating, this library enables you to:
+- Nest typed Pydantic models within other models arbitrarily deep
+- Have each model render itself AND its nested children
+- Get full type safety and validation at every level
+- Build complex documents from reusable, composable pieces
 
 ## Installation
 
 [Installation instructions pending PyPI publication]
 
-## Quick Start
+## Quick Start - Simple Example
 
 ```python
 from pydantic_stack_core import RenderablePiece, MetaStack, generate_output_from_metastack
 
-# Define custom pieces
+# Simple atomic pieces
 class Title(RenderablePiece):
     text: str
     level: int = 1
@@ -35,35 +37,90 @@ class Paragraph(RenderablePiece):
     def render(self) -> str:
         return self.content
 
-class CodeBlock(RenderablePiece):
-    code: str
-    language: str = "python"
+# Basic usage
+stack = MetaStack(pieces=[
+    Title(text="Hello", level=1),
+    Paragraph(content="World")
+])
+output = generate_output_from_metastack(stack)
+```
+
+## The Real Power: Nested Composition
+
+```python
+from pydantic_stack_core import RenderablePiece
+from typing import List
+
+# Level 1: Atomic piece
+class Author(RenderablePiece):
+    name: str
+    bio: str
     
     def render(self) -> str:
-        return f"```{self.language}\n{self.code}\n```"
+        return f"**{self.name}** - {self.bio}"
 
-# Create a stack
-stack = MetaStack(pieces=[
-    Title(text="Getting Started", level=1),
-    Paragraph(content="Here's how to use our library:"),
-    CodeBlock(code="print('Hello, World!')"),
-    Paragraph(content="That's it!")
-])
+# Level 2: Piece containing other pieces
+class CodeExample(RenderablePiece):
+    language: str
+    code: str
+    explanation: str
+    
+    def render(self) -> str:
+        return f"```{self.language}\n{self.code}\n```\n{self.explanation}"
 
-# Generate output
-output = generate_output_from_metastack(stack)
-print(output)
+# Level 3: Nested composition with typed fields!
+class Section(RenderablePiece):
+    title: str
+    content: str
+    code_examples: List[CodeExample]  # NESTED TYPED MODELS!
+    
+    def render(self) -> str:
+        output = f"## {self.title}\n\n{self.content}\n\n"
+        for example in self.code_examples:
+            output += example.render() + "\n\n"  # RECURSIVE RENDERING!
+        return output
+
+# Level 4: Deep hierarchical document
+class BlogPost(RenderablePiece):
+    title: str
+    author: Author  # NESTED MODEL AS FIELD!
+    sections: List[Section]  # LIST OF NESTED MODELS!
+    
+    def render(self) -> str:
+        output = f"# {self.title}\n\n"
+        output += self.author.render() + "\n\n"
+        for section in self.sections:
+            output += section.render()  # CASCADING RENDERS!
+        return output
+
+# Build complex document through typed composition
+blog = BlogPost(
+    title="Understanding Pydantic Stack",
+    author=Author(name="Isaac", bio="Building compound intelligence"),
+    sections=[
+        Section(
+            title="Getting Started",
+            content="This library enables nested typed composition.",
+            code_examples=[
+                CodeExample(
+                    language="python",
+                    code="class MyModel(RenderablePiece):\n    pass",
+                    explanation="Define your model by inheriting RenderablePiece"
+                )
+            ]
+        )
+    ]
+)
+
+# Single render call triggers entire tree!
+output = blog.render()
 ```
 
-Output:
-```
-# Getting Started
-Here's how to use our library:
-```python
-print('Hello, World!')
-```
-That's it!
-```
+This creates a fully typed document tree where:
+- **Type safety**: Can't put an Author where a Section belongs
+- **Validation**: Pydantic validates at every level
+- **Composition**: Sections contain CodeExamples, BlogPosts contain Sections
+- **Recursive rendering**: Each piece renders itself and its children
 
 ## Advanced Usage
 

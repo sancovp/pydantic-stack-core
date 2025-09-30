@@ -1,47 +1,78 @@
 """
-Pydantic Stack Core - Minimal library for stackable, renderable Pydantic models.
+Pydantic Stack Core - Typed hierarchical composition for structured text generation.
 
-This library provides the foundation for creating structured string outputs
-through composable Pydantic models. The core consists of:
+This library enables building complex documents through nested, typed Pydantic models
+that render to composite strings through recursive composition.
 
-1. RenderablePiece - Base class for any model that renders to string
-2. MetaStack - Universal container for stacking any RenderablePiece models  
-3. generate_output_from_metastack - Simple function to render stacks to final output
+Core Pattern: NESTED TYPED COMPOSITION
+=======================================
+The power isn't in concatenating strings - it's in building typed document trees
+where each node knows how to render itself and its children.
 
-The magic happens when agents learn patterns by calling help() on user-defined
-RenderablePiece subclasses and discover how to compose them into MetaStacks
-for different output formats.
+Key Components:
+1. RenderablePiece - Base class that enables nesting typed models within each other
+2. MetaStack - Top-level container for any RenderablePiece models
+3. generate_output_from_metastack - Triggers recursive rendering through the tree
 
-Example Usage:
+The Real Power: HIERARCHICAL COMPOSITION
+=========================================
+RenderablePiece models can contain other RenderablePiece models as typed fields,
+creating arbitrarily deep document structures with full type safety and validation.
+
+Example - Nested Typed Composition:
     ```python
-    from pydantic_stack_core import RenderablePiece, MetaStack, generate_output_from_metastack
+    from pydantic_stack_core import RenderablePiece, MetaStack
+    from typing import List
     
-    class Title(RenderablePiece):
-        text: str
-        level: int = 1
+    # Level 1: Atomic piece
+    class Author(RenderablePiece):
+        name: str
+        bio: str
         
         def render(self) -> str:
-            return f"{'#' * self.level} {self.text}"
+            return f"**{self.name}** - {self.bio}"
     
-    class Paragraph(RenderablePiece):
+    # Level 2: Piece containing pieces
+    class Section(RenderablePiece):
+        title: str
         content: str
+        code_examples: List['CodeExample']  # NESTED TYPED MODELS!
         
         def render(self) -> str:
-            return self.content
+            output = f"## {self.title}\\n{self.content}\\n"
+            for example in self.code_examples:
+                output += example.render()  # RECURSIVE RENDERING!
+            return output
     
-    # Create a stack
-    stack = MetaStack(pieces=[
-        Title(text="Hello World", level=1),
-        Paragraph(content="This is a test paragraph.")
-    ])
+    # Level 3: Deep nesting
+    class BlogPost(RenderablePiece):
+        title: str
+        author: Author  # NESTED TYPED MODEL!
+        sections: List[Section]  # NESTED LIST OF TYPED MODELS!
+        
+        def render(self) -> str:
+            output = f"# {self.title}\\n\\n"
+            output += self.author.render() + "\\n\\n"
+            for section in self.sections:
+                output += section.render()  # CASCADE OF RENDERS!
+            return output
     
-    # Generate final output
-    output = generate_output_from_metastack(stack)
-    print(output)
-    # Output:
-    # # Hello World
-    # This is a test paragraph.
+    # Build complex document through typed composition
+    post = BlogPost(
+        title="My Post",
+        author=Author(name="Isaac", bio="AI Developer"),
+        sections=[Section(...), Section(...)]
+    )
+    
+    # Triggers recursive rendering through entire tree
+    output = post.render()
     ```
+
+Benefits:
+- Type Safety: Can't put wrong types in wrong places
+- Validation: Pydantic validates at every nesting level
+- Composition: Build complex from simple, reuse components
+- Discoverability: IDE shows exactly what goes where
 """
 
 from .core import RenderablePiece, MetaStack, generate_output_from_metastack
