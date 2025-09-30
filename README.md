@@ -1,3 +1,5 @@
+[![Part of STARSYSTEM](https://img.shields.io/badge/Part%20of-STARSYSTEM-blue)](https://github.com/sancovp/starsystem-metarepo)
+
 # Pydantic Stack Core
 
 Typed hierarchical composition for structured text generation through nested Pydantic models.
